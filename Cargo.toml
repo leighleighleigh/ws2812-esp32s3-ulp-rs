@@ -1,0 +1,19 @@
+[package]
+name = "ws2812-esp32s3-ulp"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+test = false
+
+[dependencies]
+embedded-hal = "1.0.0"
+smart-leds-trait = "0.3.2"
+
+[profile.release]
+debug = false
+# size is an important factor in the ULP code, 
+# because it's easy to run out of space.
+opt-level = "s"
+codegen-units = 1 # LLVM can perform better optimizations using a single thread
