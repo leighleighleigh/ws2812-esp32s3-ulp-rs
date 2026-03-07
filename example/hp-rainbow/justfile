@@ -1,0 +1,52 @@
+# Build parameters
+espflash_flags := "--no-skip --ignore_app_descriptor --partition-table ./partitions.csv"
+cargo_flags := "--release"
+
+default:
+  @just build && just flash && just stream
+
+build:
+  #!/usr/bin/env bash
+  set +eu pipefail
+  cargo build {{cargo_flags}}
+
+# Repeatedly attempts to flash until successful
+flash APPFILE=`just find-last-built-app-elf`:
+  #!/usr/bin/env bash
+  while [ true ]; do
+    espflash flash {{espflash_flags}} -p /dev/ttyACM* {{APPFILE}} && exit 0
+    sleep 0.5
+  done
+
+stream PORT="/dev/ttyACM*":
+  #!/usr/bin/env bash
+  while [ true ]; do
+    test -c {{PORT}} && just try-stream {{PORT}}
+    # if exit with Ctrl-C, return code will be 130.
+    # this should cause a break in the loop
+    if [ "$?" -eq 130 ];
+    then
+      break
+    fi
+  done
+
+[private]
+try-stream PORT:
+  #!/usr/bin/env bash
+  echo "# [$(date +%s)] Connected to {{PORT}}"
+  while [ true ]; do
+    stty -F {{PORT}} speed 115200 cs8 -cstopb -parenb -echo time 3 min 0 2>/dev/null && break
+    sleep 0.01
+  done
+
+  while [ true ]; do
+    cat {{PORT}} 2>/dev/null || break
+  done
+  echo "# [$(date +%s)] Disconnected from {{PORT}}"
+
+# Find the pasth to the most recently built application file
+[private]
+find-last-built-app-elf APPNAME="app":
+  #!/usr/bin/env bash
+  set +eu pipefail
+  find ./target/ -maxdepth 3 -name "{{APPNAME}}" -type f -printf "%A@ %p\n" | sort -r | head -n1 | cut -d' ' -f2

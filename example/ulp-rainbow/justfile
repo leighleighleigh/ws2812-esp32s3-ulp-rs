@@ -1,0 +1,12 @@
+# Builds the application, and copies the resulting binary to the project root.
+build:
+  #!/usr/bin/env bash
+  set -eu pipefail
+  cargo build --release
+  appbin="$(just find-last-built-app-elf)"
+  cp -v "${appbin}" ./ulp-rainbow
+
+# Finds the last-built application file
+find-last-built-app-elf:
+  #!/usr/bin/env bash
+  find ./target/ -maxdepth 3 -name "rainbow" -type f -printf "%A@ %p\n" | sort -r | head -n1 | cut -d' ' -f2
