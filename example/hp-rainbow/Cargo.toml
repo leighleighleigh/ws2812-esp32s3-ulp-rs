@@ -1,0 +1,48 @@
+[package]
+edition      = "2024"
+name         = "hp-rainbow"
+rust-version = "1.88"
+version      = "0.1.0"
+
+[[bin]]
+name = "app"
+path = "./src/main.rs"
+test = false
+bench = false
+
+[features]
+default = [ "esp32s3" ]
+esp32s3 = []
+
+[dependencies]
+log = "0.4.27"
+critical-section = "1.2.0"
+esp-backtrace = { version = "0.18.1", features = ["panic-handler", "println", "esp32s3" ] }
+esp-println = { version = "0.16.1", features = ["log-04", "esp32s3" ] }
+esp-bootloader-esp-idf = { version = "0.4.0", features = ["log-04", "esp32s3" ] }
+
+[dependencies.esp-hal]
+version = "1.0.0-rc.1"
+features = ["unstable", "log-04", "esp32s3" ]
+
+[build-dependencies]
+esp-metadata-generated = { version = "0.3.0", features = ["build-script", "esp32s3" ] }
+
+[profile.dev]
+# Rust debug is too slow.
+# For debug builds always builds with some optimization
+opt-level = "s"
+
+[profile.release]
+debug = false
+strip = true
+#opt-level = "s"
+opt-level = 3
+codegen-units = 1
+lto = true
+
+[patch.crates-io]
+esp-hal = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
+esp-bootloader-esp-idf = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
+esp-backtrace = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
+esp-println = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }

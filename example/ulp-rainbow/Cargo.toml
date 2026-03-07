@@ -1,0 +1,44 @@
+[package]
+name = "ulp-rainbow"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88.0"
+
+[[bin]]
+path = "src/main.rs"
+name = "rainbow"
+test = false
+bench = false
+
+[features]
+default = ["esp32s3"]
+esp32s3 = []
+
+[dependencies]
+cfg-if = "1"
+embedded-hal = "1.0.0"
+panic-halt = "1.0.0"
+smart-leds = "0.4.0"
+ws2812-esp32s3-ulp = { path = "../../" }
+
+[dependencies.esp-lp-hal]
+version = "0.3.0"
+features = ["esp32s3"]
+
+[build-dependencies]
+esp-metadata-generated = { version = "0.3.0", features = ["build-script", "esp32s3"] }
+
+[patch.crates-io]
+esp-lp-hal = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
+#esp-lp-hal = { path = "/home/leigh/Git/esp-hal/esp-lp-hal" }
+
+[profile.release]
+debug = false
+strip = "debuginfo"
+# size is an important factor in the ULP code,  because it's easy to run out of space.
+opt-level = "s" 
+codegen-units = 1 # LLVM can perform better optimizations using a single thread
+# Enabling LTO breaks the weak linkage used for the ulp_irq_handler function...
+# https://github.com/riscvarchive/riscv-gcc/issues/172
+lto = false
+
