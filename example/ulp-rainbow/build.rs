@@ -1,4 +1,5 @@
 use std::error::Error;
+
 use esp_metadata_generated::Chip;
 
 fn main() -> Result<(), Box<dyn Error>> {

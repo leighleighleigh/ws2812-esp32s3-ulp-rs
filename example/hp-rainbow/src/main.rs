@@ -7,28 +7,34 @@
 )]
 #![deny(clippy::large_stack_frames)]
 
-
-use log::info;
 use esp_backtrace as _;
-use esp_hal::clock::CpuClock;
-use esp_hal::main;
-use esp_hal::time::Instant;
-
-use esp_hal::load_lp_code;
-use esp_hal::ulp_core::{UlpCore,UlpCoreWakeupSource};
-use esp_hal::gpio::rtc_io::LowPowerOutput;
-
 // For power pin
 use esp_hal::peripherals::GPIO2;
-use esp_hal::gpio::{Flex,DriveMode,Pull,OutputConfig,RtcPin,RtcPinWithResistors};
+use esp_hal::{
+    clock::CpuClock,
+    gpio::{
+        DriveMode,
+        Flex,
+        OutputConfig,
+        Pull,
+        RtcPin,
+        RtcPinWithResistors,
+        rtc_io::LowPowerOutput,
+    },
+    load_lp_code,
+    main,
+    time::Instant,
+    ulp_core::{UlpCore, UlpCoreWakeupSource},
+};
+use log::info;
 
 // This creates a default app-descriptor required by the esp-idf bootloader.
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
 esp_bootloader_esp_idf::esp_app_desc!();
-  
-// Affects how fast the ULP code is executed, and how fast the rainbow changes as a result. 530 cycles is about 1Hz.
-// const ULP_SLEEP_CYCLES : u32 = 265;
-const ULP_SLEEP_CYCLES : u32 = 10;
+
+// Affects how fast the ULP code is executed, and how fast the rainbow changes as a result. 530
+// cycles is about 1Hz. const ULP_SLEEP_CYCLES : u32 = 265;
+const ULP_SLEEP_CYCLES: u32 = 10;
 
 #[allow(
     clippy::large_stack_frames,
@@ -41,7 +47,6 @@ fn main() -> ! {
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
 
-    
     {
         // REQUIRED FOR LEIGHLEIGHLEIGH's CUSTOM DEVBOARD ONLY
         // Turn the power on, and keep it on during sleep using pad hold.
@@ -59,13 +64,15 @@ fn main() -> ! {
 
     // Pointer to the shared counter variable in memory
     let counter_ptr = (0x5000_1000) as *mut u32;
-    
+
     // Setup the UlpCore, which will stop it.
     let mut ulp_core = UlpCore::new(peripherals.ULP_RISCV_CORE).with_sleep_cycles(ULP_SLEEP_CYCLES);
     // Load the application from the other crate (build that crate first)
     let ulp_core_code = load_lp_code!("../ulp-rainbow/ulp-rainbow");
     // Reset the counter to 0
-    unsafe { counter_ptr.write_volatile(0); }
+    unsafe {
+        counter_ptr.write_volatile(0);
+    }
 
     // Using I2C0 and I2C1 for the SCL/SDA pins.
     // let ulp_arg_pin0 = LowPowerOutputOpenDrain::new(peripherals.GPIO0);
@@ -73,22 +80,19 @@ fn main() -> ! {
     // WS2812B data line
     let ulp_arg_gpio18 = LowPowerOutput::new(peripherals.GPIO18);
 
-    ulp_core_code.run(
-        &mut ulp_core,
-        UlpCoreWakeupSource::HpCpu,
-        ulp_arg_gpio18,
-    );
+    ulp_core_code.run(&mut ulp_core, UlpCoreWakeupSource::HpCpu, ulp_arg_gpio18);
 
     // In a loop, try to measure how fast the counter is updating.
-    // This is not a functional part of this demo, it's just something interesting for the HP-core to do.
+    // This is not a functional part of this demo, it's just something interesting for the HP-core
+    // to do.
     let mut last_print_time = Instant::now(); // Print the average rate every second
     let mut last_change_time = Instant::now();
     let mut last_counter = unsafe { counter_ptr.read_volatile() };
-    let mut single_count_samples : u64 = 0;
-    let mut single_count_period : u64 = 0;
+    let mut single_count_samples: u64 = 0;
+    let mut single_count_period: u64 = 0;
 
     loop {
-        let new_count= unsafe { counter_ptr.read_volatile() };
+        let new_count = unsafe { counter_ptr.read_volatile() };
         let new_time = Instant::now();
 
         if new_count != last_counter {
@@ -107,7 +111,10 @@ fn main() -> ! {
         if last_print_time.elapsed().as_millis() >= 1000 {
             let avg_period = single_count_period / single_count_samples;
             let avg_rate = 1000000.0 / (avg_period as f64);
-            info!("counter {}, samples {}, mean_count_rate {:.3} Hz",new_count,single_count_samples,avg_rate);
+            info!(
+                "counter {}, samples {}, mean_count_rate {:.3} Hz",
+                new_count, single_count_samples, avg_rate
+            );
             last_print_time = Instant::now();
         }
     }

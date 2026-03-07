@@ -7,12 +7,9 @@
 #![no_std]
 #![no_main]
 
-use esp_lp_hal::prelude::*;
-use esp_lp_hal::delay::Delay;
-use esp_lp_hal::gpio::Output;
+use esp_lp_hal::{delay::Delay, gpio::Output, prelude::*};
 // use embedded_hal::delay::DelayNs;
 use panic_halt as _;
-
 use smart_leds::{
     SmartLedsWrite,
     hsv::{Hsv, hsv2rgb},
@@ -28,15 +25,13 @@ const ADDRESS: u32 = 0x1000;
 // Note that, due to how the ws2812b library is CURRENTLY WRITTEN,
 // the pin number needs to be a const-time thing.
 // THIS MAY CHANGE IN FUTURE. It was originally done to ensure optimal assembly generation.
-const PIN_NUMBER : u8 = 18;
+const PIN_NUMBER: u8 = 18;
 
 #[entry]
-fn main(
-    gpio18_led: Output<18>,
-) {
+fn main(gpio18_led: Output<18>) {
     // Read counter
     let counter_ptr = ADDRESS as *mut u32;
-    let mut i : u32 = unsafe { counter_ptr.read_volatile() };
+    let mut i: u32 = unsafe { counter_ptr.read_volatile() };
 
     // Calculate Hue, update WS2812B led.
     let hsv = Hsv {
@@ -56,10 +51,12 @@ fn main(
     let rgb = apply_brightness(hsv2rgb(hsv), b);
 
     // critical_section::with(|cs| {
-      let _ = ws.write([rgb]);
+    let _ = ws.write([rgb]);
     // });
 
     // Increment counter before sleeping
     i = i.wrapping_add(1u32);
-    unsafe { counter_ptr.write_volatile(i); }
+    unsafe {
+        counter_ptr.write_volatile(i);
+    }
 }

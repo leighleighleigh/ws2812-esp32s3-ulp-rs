@@ -1,25 +1,25 @@
 #![no_std]
 #![no_main]
-use core::convert::Into;
-use core::iter::IntoIterator;
-use core::result::Result;
-use embedded_hal::digital::OutputPin;
-use embedded_hal::delay::DelayNs;
+use core::{convert::Into, iter::IntoIterator, result::Result};
+
+use embedded_hal::{delay::DelayNs, digital::OutputPin};
 use smart_leds_trait::{RGB8, SmartLedsWrite};
 
-
-const INIT_RESET_TIME_USEC : u32 = 256;
-const RESET_TIME_USEC : u32 = 64;
+const INIT_RESET_TIME_USEC: u32 = 256;
+const RESET_TIME_USEC: u32 = 64;
 
 pub struct Ws2812<const PIN: u8, TIMER> {
     delay: TIMER,
 }
 
-impl<const PIN: u8, TIMER> Ws2812<PIN, TIMER> 
-where 
-    TIMER: DelayNs
+impl<const PIN: u8, TIMER> Ws2812<PIN, TIMER>
+where
+    TIMER: DelayNs,
 {
-    pub fn new<O>(mut delay: TIMER, mut pin : O) -> Ws2812<PIN,TIMER> where O: OutputPin {
+    pub fn new<O>(mut delay: TIMER, mut pin: O) -> Ws2812<PIN, TIMER>
+    where
+        O: OutputPin,
+    {
         // By providing a pin and delay, we can force-reset the chain to prevent start-up glitches.
         pin.set_low().ok();
         // Force a low-reset.
@@ -28,9 +28,9 @@ where
     }
 }
 
-impl<const PIN: u8, TIMER> SmartLedsWrite for Ws2812<PIN,TIMER>
+impl<const PIN: u8, TIMER> SmartLedsWrite for Ws2812<PIN, TIMER>
 where
-    TIMER: DelayNs
+    TIMER: DelayNs,
 {
     type Error = ();
     type Color = RGB8;
@@ -62,7 +62,7 @@ fn write_rgb<const PIN: u8>(rgb: &RGB8) {
 
 #[inline]
 #[allow(unused_variables)]
-fn write_impl<const PIN: u8>(data : u32) {
+fn write_impl<const PIN: u8>(data: u32) {
     // The implementation below is for the esp32s3 (and possibly s2) ULP RISCV only!!!
     // NOTE: This assembly has been hand-optimised for speed.
     unsafe {
@@ -75,12 +75,12 @@ fn write_impl<const PIN: u8>(data : u32) {
         //       the first 10 bits are reserved.
         "addi a2, x0, 0x400",
         // shift to get to the pin number we want!
-        "slli a2, a2, {pin}", 
+        "slli a2, a2, {pin}",
         // a3 = mask of the data, starting at bit 23 (MSB).
         // NOTE: This mask will be right-shifted each iteration,
         //       so that we can read all the input bits.
         // 0x80_00_00 == 0b10000000_00000000_00000000
-        "lui a3, 0x800", 
+        "lui a3, 0x800",
         // ------------------------------------------ LABEL 1. |
         //                           Check the exit condition. |
         "1:",
@@ -93,7 +93,7 @@ fn write_impl<const PIN: u8>(data : u32) {
         //                             prepare next bit shift, |
         //                                  transmit data bit. |
         "2:",
-        // a5 = data & a3 
+        // a5 = data & a3
         "and a5, a3, {dat}",
         // right shift a3 by 1 bit, for the next iteration.
         "srli a3, a3, 1",
@@ -102,9 +102,9 @@ fn write_impl<const PIN: u8>(data : u32) {
         // Transmit a '1' bit.
         // NOTE: 1 bit timing is HIGH 800ns, then LOW 450ns.
         // set pin high
-        "sw a2, 0x4(a1)", 
+        "sw a2, 0x4(a1)",
         // delay
-        "addi x0, x0, 0", 
+        "addi x0, x0, 0",
         // delay
         "addi x0, x0, 0",
         // ------------------------------------------ LABEL 3. |
@@ -113,13 +113,13 @@ fn write_impl<const PIN: u8>(data : u32) {
         "3:",
         // NOTE: 0 bit timing is HIGH ~450ns, then LOW ~800ns.
         // set pin high (does nothing if already high)
-        "sw a2, 0x4(a1)", 
+        "sw a2, 0x4(a1)",
         // set pin low
-        "sw a2, 0x8(a1)", 
+        "sw a2, 0x8(a1)",
         // delay
-        "addi x0, x0, 0", 
+        "addi x0, x0, 0",
         // Return to LABEL 1, to continue iterating.
-        "jal x0, 1b", 
+        "jal x0, 1b",
         // ------------------------------------------ LABEL 3. |
         //                                               Exit. |
         "4:",

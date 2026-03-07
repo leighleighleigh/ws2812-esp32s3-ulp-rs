@@ -4,8 +4,8 @@
 // Originally written for stompy-ulp/hp-core project,
 // on the 2nd of January 2026.
 #![allow(dead_code)]
-use log::info;
 use esp_hal::peripherals;
+use log::info;
 
 pub trait FromRegister {
     fn read() -> Self;
@@ -18,7 +18,7 @@ pub struct SarCocpuState {
     reset_n: bool,
     eoi: bool,
     trap: bool,
-    ebreak: bool
+    ebreak: bool,
 }
 
 impl FromRegister for SarCocpuState {
@@ -46,7 +46,6 @@ impl FromRegister for SarCocpuState {
     }
 }
 
-
 #[derive(Debug)]
 #[allow(unused)]
 pub struct CocpuDebug {
@@ -55,15 +54,23 @@ pub struct CocpuDebug {
     mem_ready: bool,
     write_enable: u8,
     mem_address: u16,
-    state : SarCocpuState
+    state: SarCocpuState,
 }
 
 impl CocpuDebug {
     fn trigger_debug() {
         #[cfg(esp32s3)]
-        unsafe {{ &*peripherals::SENS::PTR }.sar_cocpu_state().write(|w| w.sar_cocpu_dbg_trigger().set_bit())};
+        unsafe {
+            { &*peripherals::SENS::PTR }
+                .sar_cocpu_state()
+                .write(|w| w.sar_cocpu_dbg_trigger().set_bit())
+        };
         #[cfg(esp32s2)]
-        unsafe {{ &*peripherals::SENS::PTR }.sar_cocpu_state().write(|w| w.cocpu_dbg_trigger().set_bit())};
+        unsafe {
+            { &*peripherals::SENS::PTR }
+                .sar_cocpu_state()
+                .write(|w| w.cocpu_dbg_trigger().set_bit())
+        };
     }
     fn read_debug() -> Self {
         let r = unsafe { &*peripherals::SENS::PTR }.sar_cocpu_debug().read();
@@ -93,7 +100,9 @@ impl CocpuDebug {
 impl FromRegister for CocpuDebug {
     fn read() -> Self {
         // Forum quote:
-        // "SENS_SAR_COCPU_DEBUG_REG might be helpful. Set SENS_SAR_COCPU_STATE_REG[SENS_COCPU_DBG_TRIGGER] to update (I'm not sure it's immediate though?)."
+        // "SENS_SAR_COCPU_DEBUG_REG might be helpful. Set
+        // SENS_SAR_COCPU_STATE_REG[SENS_COCPU_DBG_TRIGGER] to update (I'm not sure it's immediate
+        // though?)."
         // 1. Trigger the debug prompt
         CocpuDebug::trigger_debug();
         // 2. Read the debug register

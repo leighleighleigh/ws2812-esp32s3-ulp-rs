@@ -25,7 +25,6 @@ fn scale_brightness(v: u16, b: u16) -> u8 {
     (v * (b + 1) / 256) as u8
 }
 
-
 const fn scale_gamma(val: u8) -> u8 {
     // Fastest option - just a square
     // ((value * value) >> 16) as u16
