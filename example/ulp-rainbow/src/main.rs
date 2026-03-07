@@ -22,11 +22,6 @@ use colours::apply_brightness;
 #[cfg(any(esp32s2, esp32s3))]
 const ADDRESS: u32 = 0x1000;
 
-// Note that, due to how the ws2812b library is CURRENTLY WRITTEN,
-// the pin number needs to be a const-time thing.
-// THIS MAY CHANGE IN FUTURE. It was originally done to ensure optimal assembly generation.
-const PIN_NUMBER: u8 = 18;
-
 #[entry]
 fn main(gpio18_led: Output<18>) {
     // Read counter
@@ -40,19 +35,11 @@ fn main(gpio18_led: Output<18>) {
         val: 64,
     };
 
-    // // This is still needed, it prevents WS2812 glitches/flashes on boot up.
-    // // EDIT: Now handled in Ws2812::new()
-    // let _ = gpio18_led.set_low();
-    // Timer::after(Duration::from_millis(10));
-
+    // Update LED
     let ws_clk = Delay {};
-    let mut ws = Ws2812::<PIN_NUMBER, Delay>::new(ws_clk, gpio18_led);
-    let b: u16 = 32;
-    let rgb = apply_brightness(hsv2rgb(hsv), b);
-
-    // critical_section::with(|cs| {
+    let mut ws = Ws2812::new(gpio18_led, ws_clk);
+    let rgb = apply_brightness(hsv2rgb(hsv), 16);
     let _ = ws.write([rgb]);
-    // });
 
     // Increment counter before sleeping
     i = i.wrapping_add(1u32);
