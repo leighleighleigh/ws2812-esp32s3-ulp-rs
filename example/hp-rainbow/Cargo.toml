@@ -20,10 +20,13 @@ critical-section = "1.2.0"
 esp-backtrace = { version = "0.18.1", features = ["panic-handler", "println", "esp32s3" ] }
 esp-println = { version = "0.16.1", features = ["log-04", "esp32s3" ] }
 esp-bootloader-esp-idf = { version = "0.4.0", features = ["log-04", "esp32s3" ] }
+esp-alloc = { version = "0.9.0" }
+hstats = "0.3.0"
+num-traits = { version = "0.2.19", default-features = false, features = ["libm"] }
 
 [dependencies.esp-hal]
 version = "1.0.0-rc.1"
-features = ["unstable", "log-04", "esp32s3" ]
+features = ["unstable", "log-04", "esp32s3", "psram" ]
 
 [build-dependencies]
 esp-metadata-generated = { version = "0.3.0", features = ["build-script", "esp32s3" ] }
@@ -46,3 +49,10 @@ esp-hal = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "le
 esp-bootloader-esp-idf = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
 esp-backtrace = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
 esp-println = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
+esp-alloc = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
+
+#[patch.crates-io]
+#esp-hal = { path = "/home/leigh/Git/esp-hal/esp-hal" }
+#esp-bootloader-esp-idf = { path = "/home/leigh/Git/esp-hal/esp-bootloader-esp-idf" }
+#esp-backtrace = { path = "/home/leigh/Git/esp-hal/esp-backtrace" }
+#esp-println = { path = "/home/leigh/Git/esp-hal/esp-println" }
