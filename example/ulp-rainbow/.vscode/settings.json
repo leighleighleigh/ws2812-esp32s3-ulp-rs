@@ -1,15 +1,7 @@
 {
-  "rust-analyzer.cargo.autoreload": true,
-
   // For ESP32-S3
   "rust-analyzer.cargo.target": "riscv32imc-unknown-none-elf",
   "rust-analyzer.cargo.features": ["esp32s3"],
-  // For ESP32-S2
-  // "rust-analyzer.cargo.features": ["esp32s2"],
-
-  // For ESP32-C6
-  // "rust-analyzer.cargo.target": "riscv32imac-unknown-none-elf",
-  // "rust-analyzer.cargo.features": ["esp32c6"],
 
   "rust-analyzer.server.extraEnv": {
     "RUSTUP_TOOLCHAIN": "stable"

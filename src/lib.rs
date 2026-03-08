@@ -8,28 +8,29 @@ use smart_leds_trait::{RGB8, SmartLedsWrite};
 const INIT_RESET_TIME_USEC: u32 = 256;
 const RESET_TIME_USEC: u32 = 64;
 
-pub struct Ws2812<const PIN: u8, TIMER> {
+pub struct Ws2812<PIN, TIMER> {
+    pin: PIN,
     delay: TIMER,
 }
 
-impl<const PIN: u8, TIMER> Ws2812<PIN, TIMER>
+impl<PIN, TIMER> Ws2812<PIN, TIMER>
 where
+    PIN: OutputPin,
     TIMER: DelayNs,
 {
-    pub fn new<O>(mut delay: TIMER, mut pin: O) -> Ws2812<PIN, TIMER>
-    where
-        O: OutputPin,
+    pub fn new(mut pin: PIN, mut delay: TIMER) -> Ws2812<PIN, TIMER>
     {
         // By providing a pin and delay, we can force-reset the chain to prevent start-up glitches.
         pin.set_low().ok();
         // Force a low-reset.
         delay.delay_us(INIT_RESET_TIME_USEC);
-        Self { delay }
+        Self { pin, delay }
     }
 }
 
-impl<const PIN: u8, TIMER> SmartLedsWrite for Ws2812<PIN, TIMER>
+impl<PIN, TIMER> SmartLedsWrite for Ws2812<PIN, TIMER>
 where
+    PIN: OutputPin,
     TIMER: DelayNs,
 {
     type Error = ();
@@ -46,7 +47,7 @@ where
 
         for item in iterator {
             let item = item.into();
-            write_rgb::<PIN>(&item);
+            write_rgb(&item,&mut self.pin);
         }
 
         Ok(())
@@ -54,28 +55,28 @@ where
 }
 
 #[inline]
-fn write_rgb<const PIN: u8>(rgb: &RGB8) {
+fn write_rgb<O: OutputPin>(rgb: &RGB8, pin : &mut O) {
     // Pack the RGB values into a single u32 variable
     let data: u32 = (rgb.g as u32) << 16 | (rgb.r as u32) << 8 | (rgb.b as u32);
-    write_impl::<PIN>(data);
+    write_impl(data, pin);
 }
 
 #[inline]
 #[allow(unused_variables)]
-fn write_impl<const PIN: u8>(data: u32) {
+fn write_impl<O: OutputPin>(data: u32, pin : &mut O) {
     // The implementation below is for the esp32s3 (and possibly s2) ULP RISCV only!!!
     // NOTE: This assembly has been hand-optimised for speed.
     unsafe {
         core::arch::asm!(
         // a1 = gpio register address (0xA400)
-        "lui a1, 0xa",        // 0xa000
-        "addi a1, a1, 0x400", //0xa400
+        // "lui a1, 0xa",        // 0xa000
+        // "addi a1, a1, 0x400", //0xa400
         // a2 = gpio pin bitmask.
         // NOTE: GPIO0 starts at bit 10, GPIO21 is bit 31,
         //       the first 10 bits are reserved.
-        "addi a2, x0, 0x400",
+        // "addi a2, x0, 0x400",
         // shift to get to the pin number we want!
-        "slli a2, a2, {pin}",
+        // "slli a2, a2, {pin}",
         // a3 = mask of the data, starting at bit 23 (MSB).
         // NOTE: This mask will be right-shifted each iteration,
         //       so that we can read all the input bits.
@@ -102,7 +103,13 @@ fn write_impl<const PIN: u8>(data: u32) {
         // Transmit a '1' bit.
         // NOTE: 1 bit timing is HIGH 800ns, then LOW 450ns.
         // set pin high
-        "sw a2, 0x4(a1)",
+        // "sw a2, 0x4(a1)",
+        dat = in(reg) data,
+        );
+
+        pin.set_high().unwrap();
+
+        core::arch::asm!(
         // delay
         "addi x0, x0, 0",
         // delay
@@ -113,9 +120,13 @@ fn write_impl<const PIN: u8>(data: u32) {
         "3:",
         // NOTE: 0 bit timing is HIGH ~450ns, then LOW ~800ns.
         // set pin high (does nothing if already high)
-        "sw a2, 0x4(a1)",
+        // "sw a2, 0x4(a1)",
         // set pin low
-        "sw a2, 0x8(a1)",
+        // "sw a2, 0x8(a1)",
+        );
+        pin.set_high().unwrap();
+        pin.set_low().unwrap();
+        core::arch::asm!(
         // delay
         "addi x0, x0, 0",
         // Return to LABEL 1, to continue iterating.
@@ -125,8 +136,6 @@ fn write_impl<const PIN: u8>(data: u32) {
         "4:",
         // nop
         "addi x0, x0, 0",
-        pin = const PIN,
-        dat = in(reg) data,
         );
     }
 }
