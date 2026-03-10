@@ -20,7 +20,7 @@ mod colours;
 use colours::apply_brightness;
 
 #[cfg(any(esp32s2, esp32s3))]
-const ADDRESS: u32 = 0x1000;
+const ADDRESS: u32 = 0x1800;
 
 #[entry]
 fn main(gpio18_led: Output<18>) {

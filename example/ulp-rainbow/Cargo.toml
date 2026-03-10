@@ -29,8 +29,8 @@ features = ["esp32s3"]
 esp-metadata-generated = { version = "0.3.0", features = ["build-script", "esp32s3"] }
 
 [patch.crates-io]
-esp-lp-hal = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
-#esp-lp-hal = { path = "/home/leigh/Git/esp-hal/esp-lp-hal" }
+#esp-lp-hal = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/devel-ulp-features" }
+esp-lp-hal = { path = "/home/leigh/Git/esp-hal/esp-lp-hal" }
 
 [profile.release]
 debug = false

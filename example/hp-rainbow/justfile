@@ -8,6 +8,9 @@ default:
 build:
   #!/usr/bin/env bash
   set +eu pipefail
+  pushd ../ulp-rainbow/
+  just build
+  popd
   cargo build {{cargo_flags}}
 
 # Repeatedly attempts to flash until successful

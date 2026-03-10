@@ -8,6 +8,7 @@
 #![deny(clippy::large_stack_frames)]
 
 use esp_backtrace as _;
+use esp_hal::delay::Delay;
 // For power pin
 use esp_hal::peripherals::GPIO2;
 use esp_hal::{
@@ -24,7 +25,7 @@ use esp_hal::{
     load_lp_code,
     main,
     time::Instant,
-    ulp_core::{UlpCore, UlpCoreWakeupSource},
+    ulp_core::{UlpCore, UlpCoreWakeupSource, UlpCoreSleepCycles},
 };
 use log::info;
 
@@ -34,7 +35,7 @@ esp_bootloader_esp_idf::esp_app_desc!();
 
 // Affects how fast the ULP code is executed, and how fast the rainbow changes as a result. 530
 // cycles is about 1Hz. const ULP_SLEEP_CYCLES : u32 = 265;
-const ULP_SLEEP_CYCLES: u32 = 10;
+const ULP_SLEEP_CYCLES: u32 = 20;
 
 #[allow(
     clippy::large_stack_frames,
@@ -63,10 +64,10 @@ fn main() -> ! {
     }
 
     // Pointer to the shared counter variable in memory
-    let counter_ptr = (0x5000_1000) as *mut u32;
+    let counter_ptr = (0x5000_1800) as *mut u32;
 
     // Setup the UlpCore, which will stop it.
-    let mut ulp_core = UlpCore::new(peripherals.ULP_RISCV_CORE).with_sleep_cycles(ULP_SLEEP_CYCLES);
+    let mut ulp_core = UlpCore::new(peripherals.ULP_RISCV_CORE).with_sleep_cycles(UlpCoreSleepCycles::new(ULP_SLEEP_CYCLES));
     // Load the application from the other crate (build that crate first)
     let ulp_core_code = load_lp_code!("../ulp-rainbow/ulp-rainbow");
     // Reset the counter to 0
@@ -85,6 +86,7 @@ fn main() -> ! {
     // In a loop, try to measure how fast the counter is updating.
     // This is not a functional part of this demo, it's just something interesting for the HP-core
     // to do.
+    let mut dly = Delay::new();
     let mut last_print_time = Instant::now(); // Print the average rate every second
     let mut last_change_time = Instant::now();
     let mut last_counter = unsafe { counter_ptr.read_volatile() };
@@ -106,16 +108,18 @@ fn main() -> ! {
             single_count_period += count_period;
             last_counter = new_count;
             last_change_time = new_time;
+
+            if last_print_time.elapsed().as_millis() >= 1000 {
+                let avg_period = single_count_period / single_count_samples;
+                let avg_rate = 1000000.0 / (avg_period as f64);
+                info!(
+                    "counter {}, samples {}, mean_count_rate {:.3} Hz",
+                    new_count, single_count_samples, avg_rate
+                );
+                last_print_time = Instant::now();
+            }
         }
 
-        if last_print_time.elapsed().as_millis() >= 1000 {
-            let avg_period = single_count_period / single_count_samples;
-            let avg_rate = 1000000.0 / (avg_period as f64);
-            info!(
-                "counter {}, samples {}, mean_count_rate {:.3} Hz",
-                new_count, single_count_samples, avg_rate
-            );
-            last_print_time = Instant::now();
-        }
+        dly.delay_millis(10);
     }
 }
