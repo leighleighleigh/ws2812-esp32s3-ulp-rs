@@ -35,7 +35,7 @@ esp_bootloader_esp_idf::esp_app_desc!();
 
 // Affects how fast the ULP code is executed, and how fast the rainbow changes as a result. 530
 // cycles is about 1Hz. const ULP_SLEEP_CYCLES : u32 = 265;
-const ULP_SLEEP_CYCLES: u32 = 20;
+const ULP_SLEEP_CYCLES: u32 = 10;
 
 #[allow(
     clippy::large_stack_frames,
@@ -97,6 +97,8 @@ fn main() -> ! {
         let new_count = unsafe { counter_ptr.read_volatile() };
         let new_time = Instant::now();
 
+        dly.delay_millis(10);
+
         if new_count != last_counter {
             let dc = new_count - last_counter;
             let dt = new_time - last_change_time;
@@ -119,7 +121,5 @@ fn main() -> ! {
                 last_print_time = Instant::now();
             }
         }
-
-        dly.delay_millis(10);
     }
 }
