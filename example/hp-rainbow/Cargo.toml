@@ -41,11 +41,11 @@ opt-level = 3
 codegen-units = 1
 lto = true
 
-[patch.crates-io]
-esp-hal = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/ulp-timer" }
-esp-bootloader-esp-idf = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/ulp-timer" }
-esp-backtrace = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/ulp-timer" }
-esp-println = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/ulp-timer" }
+#[patch.crates-io]
+#esp-hal = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/ulp-timer" }
+#esp-bootloader-esp-idf = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/ulp-timer" }
+#esp-backtrace = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/ulp-timer" }
+#esp-println = { git = "https://github.com/leighleighleigh/esp-hal.git", branch = "leighleighleigh/ulp-timer" }
 
 #[patch.crates-io]
 #esp-hal = { path = "/home/leigh/Git/esp-hal/esp-hal" }
