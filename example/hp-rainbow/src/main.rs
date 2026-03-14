@@ -25,7 +25,7 @@ use esp_hal::{
     load_lp_code,
     main,
     time::Instant,
-    ulp_core::{UlpCore, UlpCoreWakeupSource, UlpCoreSleepCycles},
+    ulp_core::{UlpCore, UlpCoreWakeupSource},
 };
 use log::info;
 
@@ -67,7 +67,7 @@ fn main() -> ! {
     let counter_ptr = (0x5000_1800) as *mut u32;
 
     // Setup the UlpCore, which will stop it.
-    let mut ulp_core = UlpCore::new(peripherals.ULP_RISCV_CORE).with_sleep_cycles(UlpCoreSleepCycles::new(ULP_SLEEP_CYCLES));
+    let mut ulp_core = UlpCore::new(peripherals.ULP_RISCV_CORE);
     // Load the application from the other crate (build that crate first)
     let ulp_core_code = load_lp_code!("../ulp-rainbow/ulp-rainbow");
     // Reset the counter to 0
@@ -75,17 +75,13 @@ fn main() -> ! {
         counter_ptr.write_volatile(0);
     }
 
-    // Using I2C0 and I2C1 for the SCL/SDA pins.
-    // let ulp_arg_pin0 = LowPowerOutputOpenDrain::new(peripherals.GPIO0);
-    // let ulp_arg_pin1 = LowPowerOutputOpenDrain::new(peripherals.GPIO1);
     // WS2812B data line
     let ulp_arg_gpio18 = LowPowerOutput::new(peripherals.GPIO18);
-
     ulp_core_code.run(&mut ulp_core, UlpCoreWakeupSource::HpCpu, ulp_arg_gpio18);
 
     // In a loop, try to measure how fast the counter is updating.
-    // This is not a functional part of this demo, it's just something interesting for the HP-core
-    // to do.
+    // This is not a functional part of this demo,
+    // it's just something interesting for the HP-core to do.
     let mut dly = Delay::new();
     let mut last_print_time = Instant::now(); // Print the average rate every second
     let mut last_change_time = Instant::now();
